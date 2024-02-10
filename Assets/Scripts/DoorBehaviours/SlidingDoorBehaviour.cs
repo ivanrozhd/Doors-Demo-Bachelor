@@ -2,51 +2,51 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// the class takes care of the sliding doors. Dynamic parts move apart in different direction.
 public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
 {
-    // Combination parameters
+    // Combination parameters to define the specifics of the door interaction
     [SerializeField] private DoorBehaviorType _behaviorType;
     [SerializeField] private DoorBehaviorTriggerType _behaviorTrigger;
 
-    // Dynamic part of the door
+    // Dynamic part of the door used for the opening and closing
     [SerializeField] private Transform _doorTransformLeft;
     [SerializeField] private Transform _doorTransformRight;
 
-    // Animation
+    // Animation opening/closing
     [SerializeField] private float _openingTime = 3f;
     private Coroutine _openDoorCoroutine; 
     private Coroutine _closeDoorCoroutine; 
 
 
-    // Must-have parameters
+    // Must-have parameters to define more explicit whether the player can open the door/ interact with them
+    // parameters are kind of signals for the door to perceive the environment around it
     private bool _isOpening = false;
     private bool _opened = false;
     private bool _nextToDoor = false;
     private bool _noObstaclesExist = false;
     private bool _keyPicked = false;
 
-
-    // Instructions
-   // private TextInstructions _textDisplay;
-
-
+    
     // Distance 
     private float _activationDistance = 5f; // Distance at which the door starts opening
-    private float _fullOpenDistance = 2f; // Distance at which the door is fully open
+    private float _fullOpenDistance = 1f; // Distance at which the door is fully open
     private Vector3 _closedLeftPosition; 
     private Vector3 _closedRightPosition; 
     private Vector3 _openRightPosition; 
     private Vector3 _openLeftPosition; 
     private Transform _playerTransform;
 
-    // Key 
+    // Key attributes
+    // signifies the right key from this concrete door
     [SerializeField] private GameObject _key;
+    // presents the whole list of other keys in the scene. Needed to compare whether the player possess the right key from the door
     [SerializeField] private GameObject _keys;
     
-    // Obstacle GameObject;
+    // Obstacle GameObjects - for activation in the scene
     [SerializeField] private GameObject _obstacleObject;
 
-    // Button
+    // Button for door controll
     [SerializeField] private GameObject _button;
 
     // Obstacles
@@ -65,7 +65,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
         _openRightPosition = _doorTransformRight.position +  new Vector3(1f, 0f, 0f);
         _playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
         
-      //  _textDisplay = GameObject.FindGameObjectWithTag("Instructions").GetComponent<TextInstructions>();
         if (_behaviorType.Equals(DoorBehaviorType.Distance))
         {
             _playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
@@ -83,7 +82,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Key) && _keys != null)
             {
                 _keys.SetActive(true);
-               // _textDisplay.Show(true, 2);
             }
 
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Button) && _button != null)
@@ -110,7 +108,7 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
        
     }
 
-    // Update is called once per frame
+    // Update method is primarily used for the Distance behaviour where we need to calculate the relative position between the player and door
     void Update()
     {
         if (_behaviorType.Equals(DoorBehaviorType.Distance))
@@ -144,21 +142,25 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
     private void OnTriggerEnter(Collider other)
     {
         // Check if the player enters the trigger area
-        if (other.CompareTag("Player") && _noObstaclesExist)
+        if (other.CompareTag("Player"))
         {
             _nextToDoor = true;
-            if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Keyboard))
-            {
-                //_textDisplay.ShowText(true, 1);     
-            }
-            
+        }
+
+    }
+    
+    
+    void OnTriggerStay(Collider other)
+    {
+        // Code to run while another collider is within the trigger
+        if (other.gameObject.CompareTag("Player") && _noObstaclesExist && !_opened)
+        {
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Area))
             {
                 OpenDoor();
+                _opened = true;
             }
-            
         }
-
     }
 
     private void OnTriggerExit(Collider other)
@@ -167,11 +169,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
         if (other.CompareTag("Player") && _noObstaclesExist)
         {
             _nextToDoor = false;
-            if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Keyboard))
-            {
-                //_textDisplay.ShowText(true, 1);     
-            }
-
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Area))
             {
                 CloseDoor();
@@ -219,7 +216,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
             default:
                 break;
         }
-        Debug.Log("We are here!!!");
     }
     
     
@@ -249,7 +245,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
         // Ensure both door parts are fully open
         _doorTransformLeft.localPosition = targetPositionLeft;
         _doorTransformRight.localPosition = targetPositionRight;
-
         _isOpening = false;
         _opened = true;
     }
@@ -336,7 +331,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
         if (_obstacles.Length == 0)
         {
             _noObstaclesExist = true;
-          //  _textDisplay.Show(false, 1);
         }
     }
 
@@ -349,7 +343,6 @@ public class SlidingDoorBehaviour : MonoBehaviour,IDoorBehavior
                 _keyPicked = true;   
             }
             Destroy(check.gameObject);
-         //   _textDisplay.Show(false, 2);
         }
     }
     

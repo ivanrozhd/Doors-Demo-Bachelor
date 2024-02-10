@@ -5,9 +5,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+
+// Script for the user interface to generate the unique door behaviours
 public class DoorCustomizationUI : MonoBehaviour
 {
-    
+    // observer is a player, no more players are presented in the scene
     private IDoorObserver _observer = null;
 
     public void Subscribe(IDoorObserver newObserver) 
@@ -23,7 +25,7 @@ public class DoorCustomizationUI : MonoBehaviour
         }
     }
     
-    // UI of the door customizer
+    // Essential UI elements of the door customizer
     public TMP_Dropdown FormOfDoor;
     public TMP_Dropdown TypeOfDoor;
     public TMP_Dropdown InteractionType;
@@ -31,19 +33,19 @@ public class DoorCustomizationUI : MonoBehaviour
     public TMP_Text Number;
     
     
-    // Door Prefabs
+    // Door Prefabs - for main door types
     [SerializeField] private GameObject _standardDoor;
     [SerializeField] private GameObject _thresholdDoor;
     [SerializeField] private GameObject _slidingDoor;
     [SerializeField] private GameObject _hingedDoor;
 
     
-    // class variables
+    // class variables 
     private GameObject _instantiatedDoor;
     private int form = -1;
     private int type;
     private Vector3 _offset = Vector3.forward;
-    private int _numberOfDoors = 0;
+    private int _numberOfDoors = 0; // the high boundary of the instansiated doors
     
     //Options adjustments to prevent the user from using not supported doors
     private List<TMP_Dropdown.OptionData> _typeOptions = new List<TMP_Dropdown.OptionData>();
@@ -72,16 +74,19 @@ public class DoorCustomizationUI : MonoBehaviour
                 break;
         }
          
+        // to prepare the scene for future instantiations 
         _offset += 5 * Vector3.forward;
         _numberOfDoors++;
+        
         // Customize the door based on UI settings
         CustomizeDoor();
         
-        // Notify all observers
+        // Notify the observer about new doors to define the connection between the player and gaming doors
         _observer.OnDoorAdded(_instantiatedDoor);
        
     }
 
+    // update method checks the UI fields and extracts impossible combinations for the gaming doors
     private void Update()
     {
         if (form != FormOfDoor.value)
@@ -170,6 +175,8 @@ public class DoorCustomizationUI : MonoBehaviour
         
     }
 
+    
+    // start over method
     public void ClearScene()
     {
         _numberOfDoors = 0;
@@ -179,9 +186,11 @@ public class DoorCustomizationUI : MonoBehaviour
         
     }
 
+    
+    // based on the door characteristics from UI, we prepare the new door in the scene based on characteristics, which we define for the new door
     public void CustomizeDoor()
     {
-        //Parameters
+        // update the parameters regarding the gaming door
         Number.text = "Doors: " +  _numberOfDoors.ToString();
         form = FormOfDoor.value; 
         type = TypeOfDoor.value;

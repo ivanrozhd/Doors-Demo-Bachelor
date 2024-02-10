@@ -2,33 +2,30 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
+// the class takes care of the vanilla doors, that rotating around the axis
 public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
 {
-    // Combination parameters
+    // Combination parameters to define the specifics of the door interaction
     [SerializeField] private DoorBehaviorType _behaviorType;
     [SerializeField] private DoorBehaviorTriggerType _behaviorTrigger;
 
-    // Dynamic part of the door
+    // Dynamic part of the door used for the opening and closing
     [SerializeField] private Transform _doorTransform;
 
-    // Animation
+    // Animation opening/closing
     [SerializeField] private float _openingTime = 3f;
     private Coroutine _openDoorCoroutine; 
     private Coroutine _closeDoorCoroutine; 
 
 
-    // Must-have parameters
+    // Must-have parameters to define more explicit whether the player can open the door/ interact with them
+    // parameters are kind of signals for the door to perceive the environment around it
     private bool _isOpening = false;
     private bool _opened = false;
     private bool _nextToDoor = false;
     private bool _noObstaclesExist = false;
     private bool _keyPicked = false;
-
-
-    // Instructions
-  //  private TextInstructions _textDisplay;
-
+    
 
     // Distance 
     private float _activationDistance = 5f; // Distance at which the door starts opening
@@ -37,29 +34,28 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
     private Quaternion _openRotation; // Target rotation of the door (open state)
     private Transform _playerTransform;
 
-    // Key 
+    // Key attributes
+    // signifies the right key from this concrete door
     [SerializeField] private GameObject _key;
+    // presents the whole list of other keys in the scene. Needed to compare whether the player possess the right key from the door
     [SerializeField] private GameObject _keys;
     
-    // Obstacle GameObject;
+    // Obstacle GameObjects - for activation in the scene
     [SerializeField] private GameObject _obstacleObject;
 
-    // Button
+    // Button for door controll
     [SerializeField] private GameObject _button;
 
     // Obstacles
     [SerializeField] private GameObject[] _obstacles;
 
-
-    private HingeJoint _hingeJoint;
-
+    
 
     // Start is called before the first frame update
     void Start()
     {
         _obstacleObject.SetActive(!_noObstaclesExist);
-        //_textDisplay = GameObject.FindGameObjectWithTag("Instructions").GetComponent<TextInstructions>();
-        
+
         if (_behaviorType.Equals(DoorBehaviorType.Distance))
         {    _playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
             // Set the initial and target rotations of the door
@@ -71,29 +67,20 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
 
         else if (_behaviorType.Equals(DoorBehaviorType.Animated) || _behaviorType.Equals(DoorBehaviorType.TwoState))
         {
-          
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Key) && _keys != null)
             {
                 _keys.SetActive(true);
-                //_textDisplay.Show(true, 2);
             }
-
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Button) && _button != null)
             {
                 _button.SetActive(true);
                 _keyPicked = true;
-             //   _textDisplay.Show(true, 3);
-                
             }
-            
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Keyboard))
             {
                 _keyPicked = true;
             }
-            
-            
         }
-        
     }
 
     
@@ -102,29 +89,25 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
     private void OnTriggerEnter(Collider other)
     {
         // Check if the player enters the trigger area
-        if (other.CompareTag("Player") && _noObstaclesExist)
+        if (other.CompareTag("Player"))
         {
             _nextToDoor = true;
-            
-            if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Keyboard))
-            {
-               // _textDisplay.Show(true, 0);
-            }
-           
+        }
+    }
+    
+    void OnTriggerStay(Collider other)
+    {
+        // Code to run while another collider is within the trigger
+        if (other.gameObject.CompareTag("Player") && _noObstaclesExist && !_opened)
+        {
             if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Area))
             {
                 OpenDoor();
+                _opened = true;
             }
-            
         }
-
-        if (other.CompareTag("Player") && !_noObstaclesExist)
-        {
-           // _textDisplay.Show(true, 1);
-        }
-
     }
-
+    
     private void OnTriggerExit(Collider other)
     {
         // Check if the player enters the trigger area
@@ -138,8 +121,8 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
             }
         }
     }
-
-
+    
+    // Update method is primarily used for the Distance behaviour where we need to calculate the relative position between the player and door
     private void Update()
     {
         if (_behaviorType.Equals(DoorBehaviorType.Distance))
@@ -161,12 +144,7 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
                 _doorTransform.localRotation = _closedRotation;
             }
         }
-
-        if (_behaviorTrigger.Equals(DoorBehaviorTriggerType.Button) && _opened)
-        {
-          //  _textDisplay.Show(false, 3); 
-        }
-
+        
     }
 
 
@@ -199,10 +177,8 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
 
             case DoorBehaviorType.TwoState:
                 _isOpening = true;
-                Debug.Log(_doorTransform.rotation.eulerAngles);
                 _doorTransform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
                 _isOpening = false;
-                Debug.Log(_doorTransform.eulerAngles);
                 _opened = true;
                 break;
             default:
@@ -290,6 +266,8 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
         _opened = false;
     }
 
+    
+    
     public void DestroyObstacle(GameObject obstacle)
     {
         foreach (var _obstacle in _obstacles)
@@ -303,11 +281,7 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
             }
         }
 
-        if (_obstacles.Length == 0)
-        {
-            _noObstaclesExist = true;
-           // _textDisplay.Show(false, 1);
-        }
+        _noObstaclesExist = _obstacles.Length == 0;
     }
 
     public void TakeKey(GameObject check)
@@ -319,7 +293,6 @@ public class StandardDoorBehaviour : MonoBehaviour, IDoorBehavior
                 _keyPicked = true;   
             }
             Destroy(check.gameObject);
-           // _textDisplay.Show(false, 2);
         }
     }
 

@@ -25,15 +25,15 @@ public enum DoorBehaviorTriggerType
 
 public interface IDoorBehavior
 {
-    // used for animated and 2-state doors
+    // used for animated and 2-state doors to make them open
     void OpenDoor();
     void CloseDoor();
     
 
-    // doors which have some kind of obstacles
+    // doors which have some kind of obstacles have to get signals, whether the obstructions still exist
     public void DestroyObstacle(GameObject obstacle);
 
-    // Key interaction with the precise door
+    // The method checks, whether the precise key is suitable for the door
     public void TakeKey(GameObject check);
 
     // destroys from the scene the object attached with this interface

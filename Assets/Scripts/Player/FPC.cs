@@ -4,8 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+// First player controller: moving, looking and interaction with gaming doors, teleporting
 public class FPC : MonoBehaviour, IDoorObserver
 {
+    
+    // parameters for the player signals and actions
     private DefaultPlayerInput _defaultPlayerInput;
     private InputAction _moveAction;
     private InputAction _lookAction;
@@ -16,7 +19,7 @@ public class FPC : MonoBehaviour, IDoorObserver
     private Vector3 _initialPosition;
    
     
-    //Extension
+    //Extension of gaming doors to make sure that the player can interact with all of them
     private List<IDoorBehavior> _doors; 
 
     [SerializeField] private float _speed = 3f;
@@ -93,7 +96,7 @@ public class FPC : MonoBehaviour, IDoorObserver
     
     
     
-    // One per scene
+    // check out when the new door is initialized in the scene
     public void InitializeDoorBehaviors(GameObject door)
     {
         IDoorBehavior doorBehavior = door.GetComponent<IDoorBehavior>();
@@ -103,6 +106,7 @@ public class FPC : MonoBehaviour, IDoorObserver
         }
     }
 
+    // return to the door generator
     private void Teleport(InputAction.CallbackContext context)
     {
         this.gameObject.transform.position = _initialPosition;
@@ -223,12 +227,13 @@ public class FPC : MonoBehaviour, IDoorObserver
     }
 
     
-    // Observarble
+    //get signals for new doors in scenes
     public void OnDoorAdded(GameObject door)
     {
         InitializeDoorBehaviors(door);
     }
 
+    //destroys all gaming doors in the scene
     public void Clear()
     {
         foreach (var gamingDoor in _doors)

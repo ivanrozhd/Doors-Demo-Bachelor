@@ -8,6 +8,8 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
      // Combination parameters
     [SerializeField] private DoorBehaviorType _behaviorType;
     [SerializeField] private DoorBehaviorTriggerType _behaviorTrigger;
+    
+    // Control of the physical component
     [SerializeField] private HingeJoint _hingeJoint;
     [SerializeField] private Transform _doorTransform;
     private Quaternion initialRotation;
@@ -15,7 +17,8 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
     private Vector3 mouseOffset;
 
 
-    // Must-have parameters
+    // Must-have parameters to define more explicit whether the player can open the door/ interact with them
+    // parameters are kind of signals for the door to perceive the environment around it
     private bool _isOpening = false;
     private bool _opened = false;
     private bool _noObstaclesExist = false;
@@ -24,14 +27,13 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
     private JointMotor _hingeMotor;
 
 
-    // Instructions
-    private TextInstructions _textDisplay;
     
-    // Key 
+    // Key attributes
+    // signifies the right key from this concrete door
     [SerializeField] private GameObject _key;
     [SerializeField] private GameObject _keys;
     
-    // Obstacle GameObject;
+    // Obstacle GameObjects - for activation in the scene
     [SerializeField] private GameObject _obstacleObject;
     [SerializeField] private GameObject _block;
 
@@ -44,6 +46,7 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
     void Start()
     {
         initialRotation = _doorTransform.localRotation;
+        DraggableDoor _draggableDoorScript = _doorTransform.gameObject.GetComponent<DraggableDoor>();
         if (_behaviorType.Equals(DoorBehaviorType.FullOpening))
         {
             _hingeJoint.limits = new JointLimits
@@ -52,10 +55,14 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
                 max = 90 
                 
             };
+            if (_draggableDoorScript != null)
+            {
+                Destroy(_draggableDoorScript);
+            }
+            
         }
         if (_behaviorType.Equals(DoorBehaviorType.MouseOpening))
         {
-            DraggableDoor _draggableDoorScript = _doorTransform.gameObject.GetComponent<DraggableDoor>();
             if (_draggableDoorScript != null)
             {
                 _draggableDoorScript.enabled = true;
@@ -70,10 +77,15 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
         _obstacleObject.SetActive(!_noObstaclesExist);
     }
 
+    // Make the door close after the player leaves the the door area
     void FixedUpdate()
     {
         if (_behaviorType.Equals(DoorBehaviorType.FullOpening))
         {
+            if (!_nextToDoor)
+            {
+                
+            }
             if (Quaternion.Angle(_doorTransform.localRotation, initialRotation) > 1f  && !_nextToDoor)
             {
                 // Calculate the rotation speed based on the remaining angle to reach the initial position
@@ -110,20 +122,13 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
 
     
 
-    public void OpenDoor()
-    {
-        return;
-    }
-
-
-
-    public void CloseDoor()
-    {
-       return;
-    }
-
+    public void OpenDoor() {return;}
+   
+    
+    public void CloseDoor() {return;}
    
 
+    
     public void DestroyObstacle(GameObject obstacle)
     {
         foreach (var _obstacle in _obstacles)
@@ -137,10 +142,8 @@ public class HingedBehaviour : MonoBehaviour, IDoorBehavior
             }
         }
 
-        if (_obstacles.Length == 0)
-        {
-            _noObstaclesExist = true;
-        }
+        _noObstaclesExist = _obstacles.Length == 0;
+
     }
 
     public void TakeKey(GameObject check)

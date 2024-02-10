@@ -1,8 +1,10 @@
 using UnityEngine;
 
+
+// Interaction class is the extra class, that only controlls the cursor and underscores the possible interactions in the scene
 public class Interaction : MonoBehaviour
 {
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         if (other.CompareTag("Player")) // Check if the collider belongs to the player
         {

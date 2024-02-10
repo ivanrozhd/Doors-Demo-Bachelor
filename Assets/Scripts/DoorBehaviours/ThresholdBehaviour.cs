@@ -2,44 +2,47 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// The class takes care of the thresholds and interactions with a player
 public class ThresholdBehaviour : MonoBehaviour, IDoorBehavior
 {
     
     private bool _nextToDoor = false;
-    private bool _NoObstaclesExist = false;
+    private bool _noObstaclesExist = false;
     
     
     // Obstacle GameObject;
     [SerializeField] private GameObject _obstacleObject;
     [SerializeField] private GameObject[] _obstacles;
-    private TextInstructions _textDisplay;
+   
     
     
     private void Start()
     {
-        _textDisplay = GameObject.FindGameObjectWithTag("Instructions").GetComponent<TextInstructions>();
         _obstacleObject.SetActive(!NoObstacleExist);
     }
     
     private void OnTriggerEnter(Collider other)
     {
         // Check if the player enters the trigger area
-        if (other.CompareTag("Player") && !_NoObstaclesExist)
+        if (other.CompareTag("Player"))
         {
-            _nextToDoor = true;
-            _textDisplay.Show(true,1);
-         
+            if (!_noObstaclesExist)
+            {
+                _nextToDoor = true;    
+            }
         }
-        
     }
 
     private void OnTriggerExit(Collider other)
     {
-        // Check if the player enters the trigger area
-        if (other.CompareTag("Player") && !_NoObstaclesExist)
+        // Check if the player exists the trigger area
+        if (other.CompareTag("Player"))
         {
-            _nextToDoor = false;
-            _textDisplay.Show(false, 1);
+            if (!_noObstaclesExist)
+            {
+                _nextToDoor = true;    
+            }
+            
         }
     }
     
@@ -57,13 +60,27 @@ public class ThresholdBehaviour : MonoBehaviour, IDoorBehavior
             }
         }
         
-        if (_obstacles.Length == 0)
-        {
-            _NoObstaclesExist = true;
-            _textDisplay.Show(false, 1);
-        }
+        _noObstaclesExist = _obstacles.Length == 0;
     }
     
+    public void deleteGameObject()
+    {
+        Destroy(this.gameObject);
+    }
+    
+    public bool NextToDoor   
+    {   
+        get { return _nextToDoor; }
+    }
+    public bool NoObstacleExist
+
+    {
+        get { return _noObstaclesExist; }
+        set => _noObstaclesExist = value;
+    }
+    
+    
+    // further methods are not relevant for the threshold and return default values
     public void TakeKey(GameObject check)
     {
        return;
@@ -91,25 +108,11 @@ public class ThresholdBehaviour : MonoBehaviour, IDoorBehavior
     {   
         get { return true; }
     }
-    public bool NextToDoor   
-    {   
-        get { return _nextToDoor; }
-    }
-    public bool NoObstacleExist
-
-    {
-        get { return _NoObstaclesExist; }
-        set => _NoObstaclesExist = value;
-    }
-
     public bool KeyPicked   
     {   
         get { return true; }
     }
     
-    public void deleteGameObject()
-    {
-        Destroy(this.gameObject);
-    }
+   
 
 }
