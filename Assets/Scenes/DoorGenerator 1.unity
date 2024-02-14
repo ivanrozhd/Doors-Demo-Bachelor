@@ -2100,7 +2100,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.1
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -6208,7 +6208,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: '                          INSTRUCTIONS
 
-    1.  Use the Door UI COntroller
+    1.  Use the Door UI Controller
     to create the gaming door in the scene.
 
     2. Press "R" to teleport to the
