@@ -1,11 +1,8 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 // First player controller: moving, looking and interaction with gaming doors, teleporting
-public class FPC : MonoBehaviour, IDoorObserver
+public class FPC : MonoBehaviour
 {
     
     // parameters for the player signals and actions
@@ -17,10 +14,9 @@ public class FPC : MonoBehaviour, IDoorObserver
     private Transform _cameraTransform;
     private float _xRotation = 0f;
     private Vector3 _initialPosition;
-   
+
+    public DoorManager _doorManager;
     
-    //Extension of gaming doors to make sure that the player can interact with all of them
-    private List<IDoorBehavior> _doors; 
 
     [SerializeField] private float _speed = 3f;
     [SerializeField] private float _mouseSensitivity = 10f;
@@ -33,17 +29,6 @@ public class FPC : MonoBehaviour, IDoorObserver
         _cameraTransform = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Transform>();
         Cursor.lockState = CursorLockMode.Locked;
         _initialPosition = this.gameObject.transform.position;
-        _doors = new List<IDoorBehavior>();
-        DoorCustomizationUI doorCustomizationUI = FindObjectOfType<DoorCustomizationUI>();
-        if (doorCustomizationUI != null)
-        {
-            doorCustomizationUI.Subscribe(this);
-        }
-        else
-        {
-            Debug.LogWarning("DoorCustomizationUI not found in the scene.");
-            
-        }
     }
     
     private void OnEnable()
@@ -79,12 +64,6 @@ public class FPC : MonoBehaviour, IDoorObserver
         _defaultPlayerInput.Player.Click.Disable();
         _defaultPlayerInput.Player.Teleport.performed -= Teleport;
         _defaultPlayerInput.Player.Teleport.Disable();
-        
-        DoorCustomizationUI doorCustomizationUI = FindObjectOfType<DoorCustomizationUI>();
-        if (doorCustomizationUI != null)
-        {
-            doorCustomizationUI.Unsubscribe(this);
-        }
     }
     
     
@@ -95,17 +74,6 @@ public class FPC : MonoBehaviour, IDoorObserver
     }
     
     
-    
-    // check out when the new door is initialized in the scene
-    public void InitializeDoorBehaviors(GameObject door)
-    {
-        IDoorBehavior doorBehavior = door.GetComponent<IDoorBehavior>();
-        if (doorBehavior != null && !_doors.Contains(doorBehavior))
-        {
-                    _doors.Add(doorBehavior); 
-        }
-    }
-
     // return to the door generator
     private void Teleport(InputAction.CallbackContext context)
     {
@@ -117,69 +85,44 @@ public class FPC : MonoBehaviour, IDoorObserver
     // Method to open the door when the "Open" action is performed
     private void OnClick(InputAction.CallbackContext context)
     {
+     
         if (Cursor.lockState != CursorLockMode.Locked)
         {
-            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             RaycastHit hit;
-            if (Physics.Raycast(ray, out hit))
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            
+            if (Physics.Raycast(ray, out hit))  
             {
-                Transform currentTransform = hit.collider.transform;
-                if (hit.collider.CompareTag("Interactable"))
-                {
-                    // Traverse up the hierarchy and check for the IDoorBehavior component
-                    IDoorBehavior doorBehavior = null;
-                    while (currentTransform != null && doorBehavior == null)
-                    {
-                        doorBehavior = currentTransform.GetComponent<IDoorBehavior>();
-                        currentTransform = currentTransform.parent;
-                    }
-
-                    if (doorBehavior != null)
-                    {
-                        if (doorBehavior.Interaction.Equals(DoorBehaviorTriggerType.Button) && !doorBehavior.Opened && doorBehavior.NoObstacleExist)
-                        {
-                            doorBehavior.OpenDoor();
-                        }
-                        else if (doorBehavior.Interaction.Equals(DoorBehaviorTriggerType.Button) && doorBehavior.Opened && doorBehavior.NoObstacleExist)
-                        {
-                            doorBehavior.CloseDoor();
-                        }    
-                    }
-                }
-                if (hit.collider.CompareTag("Key"))
-                {
-                    // Traverse up the hierarchy and check for the IDoorBehavior component
-                    IDoorBehavior doorBehavior = null;
-                    while (currentTransform != null && doorBehavior == null)
-                    {
-                        doorBehavior = currentTransform.GetComponent<IDoorBehavior>();
-                        currentTransform = currentTransform.parent;
-                    }
-                    doorBehavior.TakeKey(hit.collider.gameObject);
-                }
                 
-                if (hit.collider.CompareTag("obstacle"))
-                {
-                    // Traverse up the hierarchy and check for the IDoorBehavior component
-                    IDoorBehavior doorBehavior = null;
-                    while (currentTransform != null && doorBehavior == null)
-                    {
-                        doorBehavior = currentTransform.GetComponent<IDoorBehavior>();
-                        currentTransform = currentTransform.parent;
-                    }
-                    doorBehavior.DestroyObstacle(hit.collider.gameObject);
-                }
-                
-            }   
+                HandleInteraction(hit);  
+            }
         }
     }
     
+   
+
+// Checking out what kind of the interaction we have
+    private void HandleInteraction(RaycastHit hit)
+    {
+        switch (hit.collider.tag)
+        {
+            case "Interactable":
+                DoorInteractionManager.Instance.HandleDoor(hit.collider.transform);
+                break;
+            case "Key":
+                DoorInteractionManager.Instance.TakeKey(hit.collider.transform, hit.collider.gameObject);
+                break;
+            case "obstacle":
+                DoorInteractionManager.Instance.DestroyObstacle(hit.collider.transform, hit.collider.gameObject);
+                break;
+        }
+    }
+  
     
     // Method to open the door when the "Open" action is performed "E pressed"
     private void OnOpenAction(InputAction.CallbackContext context)
     {
-        
-        foreach (var door in _doors)
+        foreach (var door in _doorManager._doors)
         {
             if (door.Interaction.Equals(DoorBehaviorTriggerType.Keyboard) ||
                 door.Interaction.Equals(DoorBehaviorTriggerType.Key))
@@ -197,8 +140,6 @@ public class FPC : MonoBehaviour, IDoorObserver
                 }    
             }    
         }
-        
-        
         
     }
     
@@ -226,27 +167,5 @@ public class FPC : MonoBehaviour, IDoorObserver
         _transform.Rotate(Vector3.up * mouseX);
     }
 
-    
-    //get signals for new doors in scenes
-    public void OnDoorAdded(GameObject door)
-    {
-        InitializeDoorBehaviors(door);
-    }
-
-    //destroys all gaming doors in the scene
-    public void Clear()
-    {
-        foreach (var gamingDoor in _doors)
-        {
-            gamingDoor.deleteGameObject();
-        }
-            
-        _doors.Clear();
-    }
-
-    private void OnDestroy()
-    {
-        // Unsubscribe when the object is destroyed
-        FindObjectOfType<DoorCustomizationUI>()?.Unsubscribe(this);
-    }
+   
 }

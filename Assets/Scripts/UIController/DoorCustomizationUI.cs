@@ -9,7 +9,7 @@ using UnityEngine.UI;
 // Script for the user interface to generate the unique door behaviours
 public class DoorCustomizationUI : MonoBehaviour
 {
-    // observer is a player, no more players are presented in the scene
+    // Door manager is a player, no more players are presented in the scene
     private IDoorObserver _observer = null;
 
     public void Subscribe(IDoorObserver newObserver) 
